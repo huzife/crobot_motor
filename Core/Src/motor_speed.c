@@ -10,8 +10,14 @@
 #include <pid_tuner.h>
 #include <FreeRTOS.h>
 #include <timers.h>
+#include <math.h>
 
 #define CABS(A) ((A) > 0 ? (A) : -(A))
+
+#define MOTOR_SPEED_SCALE 10000.0f
+#define PI 3.1415926f
+
+static uint16_t motor_cpr = 1580;
 
 static struct __motor_speed {
     float pwm;
@@ -29,8 +35,9 @@ static xTimerHandle motor_pid_handle, motor_timeout_handle;
  * @param speed encoder count every pid interval
  */
 void motor1_set_speed(int16_t speed) {
-    motor_info[0].target_speed = speed;
-    if (speed)
+    float speed_val = speed / MOTOR_SPEED_SCALE;
+    motor_info[0].target_speed = speed_val / (2 * PI) * motor_cpr * (pid_interval / 1000.0f);
+    if (fabsf(speed_val) > 1e-6f)
         xTimerReset(motor_timeout_handle, 0);
 }
 
@@ -39,8 +46,9 @@ void motor1_set_speed(int16_t speed) {
  * @param speed encoder count every pid interval
  */
 void motor2_set_speed(int16_t speed) {
-    motor_info[1].target_speed = speed;
-    if (speed)
+    float speed_val = speed / MOTOR_SPEED_SCALE;
+    motor_info[1].target_speed = speed_val / (2 * PI) * motor_cpr * (pid_interval / 1000.0f);
+    if (fabsf(speed_val) > 1e-6f)
         xTimerReset(motor_timeout_handle, 0);
 }
 
@@ -49,8 +57,9 @@ void motor2_set_speed(int16_t speed) {
  * @param speed encoder count every pid interval
  */
 void motor3_set_speed(int16_t speed) {
-    motor_info[2].target_speed = speed;
-    if (speed)
+    float speed_val = speed / MOTOR_SPEED_SCALE;
+    motor_info[2].target_speed = speed_val / (2 * PI) * motor_cpr * (pid_interval / 1000.0f);
+    if (fabsf(speed_val) > 1e-6f)
         xTimerReset(motor_timeout_handle, 0);
 }
 
@@ -59,8 +68,9 @@ void motor3_set_speed(int16_t speed) {
  * @param speed encoder count every pid interval
  */
 void motor4_set_speed(int16_t speed) {
-    motor_info[3].target_speed = speed;
-    if (speed)
+    float speed_val = speed / MOTOR_SPEED_SCALE;
+    motor_info[3].target_speed = speed_val / (2 * PI) * motor_cpr * (pid_interval / 1000.0f);
+    if (fabsf(speed_val) > 1e-6f)
         xTimerReset(motor_timeout_handle, 0);
 }
 
@@ -182,13 +192,15 @@ static void motor_timeout_callback(xTimerHandle timer_handle) {
 int16_t motor_get_cur_speed(unsigned int motor) {
     if (motor > 3)
         return 0;
-    return motor_info[motor].current_speed;
+    float speed = motor_info[motor].current_speed * (2 * PI) / motor_cpr / (pid_interval / 1000.0f);
+    return speed * MOTOR_SPEED_SCALE;
 }
 
 int16_t motor_get_tgt_speed(unsigned int motor) {
     if (motor > 3)
         return 0;
-    return motor_info[motor].target_speed;
+    float speed = motor_info[motor].target_speed * (2 * PI) / motor_cpr / (pid_interval / 1000.0f);
+    return speed * MOTOR_SPEED_SCALE;
 }
 
 uint16_t motor_get_pid_interval(void) {
@@ -214,6 +226,21 @@ void motor_set_pid_interval(uint32_t interval) {
     pid_set_kd(kd);
     /* apply interval */
     xTimerChangePeriod(motor_pid_handle, pdMS_TO_TICKS(interval), pdMS_TO_TICKS(50));
+}
+
+void motor_set_count_per_rev(uint16_t value) {
+    /* set speed to zero */
+    motor_info[0].target_speed = 0;
+    motor_info[1].target_speed = 0;
+    motor_info[2].target_speed = 0;
+    motor_info[3].target_speed = 0;
+    /* reset all pid calculations */
+    pid_reset();
+    motor_cpr = value;
+}
+
+uint16_t motor_get_count_per_rev() {
+    return motor_cpr;
 }
 
 void motor_speed_init(void) {
