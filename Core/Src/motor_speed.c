@@ -14,7 +14,7 @@
 
 #define CABS(A) ((A) > 0 ? (A) : -(A))
 
-#define MOTOR_SPEED_SCALE 10000.0f
+#define MOTOR_SPEED_SCALE 1000.0f
 #define PI 3.1415926f
 
 static uint16_t motor_cpr = 1580;
