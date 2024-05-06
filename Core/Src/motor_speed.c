@@ -14,10 +14,12 @@
 
 #define CABS(A) ((A) > 0 ? (A) : -(A))
 
+#define MOTOR_CPR_SCALE 0.1f
 #define MOTOR_SPEED_SCALE 1000.0f
 #define PI 3.1415926f
 
 static uint16_t motor_cpr = 1580;
+static bool motor_reverse;
 
 static struct __motor_speed {
     float pwm;
@@ -36,6 +38,8 @@ static xTimerHandle motor_pid_handle, motor_timeout_handle;
  */
 void motor1_set_speed(int16_t speed) {
     float speed_val = speed / MOTOR_SPEED_SCALE;
+    if (motor_reverse)
+        speed_val = -speed_val;
     motor_info[0].target_speed = speed_val / (2 * PI) * motor_cpr * (pid_interval / 1000.0f);
     if (fabsf(speed_val) > 1e-6f)
         xTimerReset(motor_timeout_handle, 0);
@@ -47,6 +51,8 @@ void motor1_set_speed(int16_t speed) {
  */
 void motor2_set_speed(int16_t speed) {
     float speed_val = speed / MOTOR_SPEED_SCALE;
+    if (motor_reverse)
+        speed_val = -speed_val;
     motor_info[1].target_speed = speed_val / (2 * PI) * motor_cpr * (pid_interval / 1000.0f);
     if (fabsf(speed_val) > 1e-6f)
         xTimerReset(motor_timeout_handle, 0);
@@ -58,6 +64,8 @@ void motor2_set_speed(int16_t speed) {
  */
 void motor3_set_speed(int16_t speed) {
     float speed_val = speed / MOTOR_SPEED_SCALE;
+    if (motor_reverse)
+        speed_val = -speed_val;
     motor_info[2].target_speed = speed_val / (2 * PI) * motor_cpr * (pid_interval / 1000.0f);
     if (fabsf(speed_val) > 1e-6f)
         xTimerReset(motor_timeout_handle, 0);
@@ -69,6 +77,8 @@ void motor3_set_speed(int16_t speed) {
  */
 void motor4_set_speed(int16_t speed) {
     float speed_val = speed / MOTOR_SPEED_SCALE;
+    if (motor_reverse)
+        speed_val = -speed_val;
     motor_info[3].target_speed = speed_val / (2 * PI) * motor_cpr * (pid_interval / 1000.0f);
     if (fabsf(speed_val) > 1e-6f)
         xTimerReset(motor_timeout_handle, 0);
@@ -193,6 +203,8 @@ int16_t motor_get_cur_speed(unsigned int motor) {
     if (motor > 3)
         return 0;
     float speed = motor_info[motor].current_speed * (2 * PI) / motor_cpr / (pid_interval / 1000.0f);
+    if (motor_reverse)
+        speed = -speed;
     return speed * MOTOR_SPEED_SCALE;
 }
 
@@ -200,6 +212,8 @@ int16_t motor_get_tgt_speed(unsigned int motor) {
     if (motor > 3)
         return 0;
     float speed = motor_info[motor].target_speed * (2 * PI) / motor_cpr / (pid_interval / 1000.0f);
+    if (motor_reverse)
+        speed = -speed;
     return speed * MOTOR_SPEED_SCALE;
 }
 
@@ -236,11 +250,19 @@ void motor_set_count_per_rev(uint16_t value) {
     motor_info[3].target_speed = 0;
     /* reset all pid calculations */
     pid_reset();
-    motor_cpr = value;
+    motor_cpr = value / MOTOR_CPR_SCALE;
 }
 
 uint16_t motor_get_count_per_rev() {
-    return motor_cpr;
+    return motor_cpr * MOTOR_CPR_SCALE;
+}
+
+void motor_set_reverse(bool reverse) {
+    motor_reverse = reverse;
+}
+
+bool motor_get_reverse() {
+    return motor_reverse;
 }
 
 void motor_speed_init(void) {

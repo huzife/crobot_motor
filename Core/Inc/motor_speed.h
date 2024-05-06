@@ -5,6 +5,7 @@
 #ifndef CROBOT_MOTOR_MOTOR_SPEED_H
 #define CROBOT_MOTOR_MOTOR_SPEED_H
 #include <stdint.h>
+#include <stdbool.h>
 #define MOTOR_SPEED_TIMEOUT 500
 void motor1_set_speed(int16_t speed);
 void motor2_set_speed(int16_t speed);
@@ -16,5 +17,7 @@ void motor_set_pid_interval(uint32_t interval);
 uint16_t motor_get_pid_interval(void);
 void motor_set_count_per_rev(uint16_t value);
 uint16_t motor_get_count_per_rev(void);
+void motor_set_reverse(bool reverse);
+bool motor_get_reverse();
 void motor_speed_init(void);
 #endif //CROBOT_MOTOR_MOTOR_SPEED_H

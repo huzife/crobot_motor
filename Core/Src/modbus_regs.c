@@ -75,6 +75,8 @@ uint16_t modbus_get_holding_reg(uint16_t reg) {
             return motor_get_pid_interval();
         case 0x14:
             return motor_get_count_per_rev();
+        case 0x15:
+            return (uint16_t) motor_get_reverse();
         case 0x20:
             return pid_tuner_reg_get();
         default:
@@ -116,6 +118,9 @@ void modbus_set_holding_reg(uint16_t reg, uint16_t val) {
             break;
         case 0x14:
             motor_set_count_per_rev(val);
+            break;
+        case 0x15:
+            motor_set_reverse((bool) val);
             break;
         case 0x20:
             pid_tuner_reg_set(val);
